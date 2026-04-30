@@ -1,8 +1,9 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./taskmanager.db');
+const { createDatabase } = require('@databases/sqlite');
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
+const db = createDatabase('./taskmanager.db');
+
+async function init() {
+  await db.query(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
@@ -11,24 +12,21 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS projects (
+  await db.query(`CREATE TABLE IF NOT EXISTS projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     description TEXT,
     created_by INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS project_members (
+  await db.query(`CREATE TABLE IF NOT EXISTS project_members (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER,
-    user_id INTEGER,
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    user_id INTEGER
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS tasks (
+  await db.query(`CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT,
@@ -38,11 +36,10 @@ db.serialize(() => {
     project_id INTEGER,
     assigned_to INTEGER,
     created_by INTEGER,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (project_id) REFERENCES projects(id),
-    FOREIGN KEY (assigned_to) REFERENCES users(id),
-    FOREIGN KEY (created_by) REFERENCES users(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-});
+}
+
+init().catch(console.error);
 
 module.exports = db;

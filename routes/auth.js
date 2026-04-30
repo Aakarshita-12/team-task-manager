@@ -6,38 +6,39 @@ const db = require('../database');
 require('dotenv').config();
 
 // Signup
-router.post('/signup', (req, res) => {
+router.post('/signup', async (req, res) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  const hashedPassword = bcrypt.hashSync(password, 10);
-  const userRole = role === 'admin' ? 'admin' : 'member';
+  try {
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const userRole = role === 'admin' ? 'admin' : 'member';
 
-  db.run(
-    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
-    [name, email, hashedPassword, userRole],
-    function (err) {
-      if (err) {
-        return res.status(400).json({ message: 'Email already exists' });
-      }
-      res.json({ message: 'User created successfully' });
-    }
-  );
+    await db.query(
+      `INSERT INTO users (name, email, password, role) VALUES (${name}, ${email}, ${hashedPassword}, ${userRole})`
+    );
+    res.json({ message: 'User created successfully' });
+  } catch (err) {
+    res.status(400).json({ message: 'Email already exists' });
+  }
 });
 
 // Login
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-    if (err || !user) {
+  try {
+    const users = await db.query(`SELECT * FROM users WHERE email = ${email}`);
+    const user = users[0];
+
+    if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
 
@@ -53,7 +54,9 @@ router.post('/login', (req, res) => {
     );
 
     res.json({ token, role: user.role, name: user.name });
-  });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;
