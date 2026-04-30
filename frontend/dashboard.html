@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard - TaskManager</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
+    .navbar { background: #4f46e5; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .navbar h1 { font-size: 20px; }
+    .navbar div { display: flex; align-items: center; gap: 16px; }
+    .navbar span { font-size: 14px; opacity: 0.9; }
+    .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .logout-btn:hover { background: rgba(255,255,255,0.3); }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); text-align: center; }
+    .stat-card .number { font-size: 36px; font-weight: 700; color: #4f46e5; }
+    .stat-card .label { color: #718096; font-size: 13px; margin-top: 4px; }
+    .stat-card.overdue .number { color: #e53e3e; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn { padding: 8px 20px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; background: white; color: #4a5568; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
+    .tab-btn.active { background: #4f46e5; color: white; }
+    .section { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 24px; margin-bottom: 24px; }
+    .section h2 { font-size: 18px; color: #2d3748; margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+    input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
+    input:focus, select:focus { border-color: #4f46e5; }
+    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-primary { background: #4f46e5; color: white; }
+    .btn-primary:hover { background: #4338ca; }
+    .btn-danger { background: #e53e3e; color: white; }
+    .btn-danger:hover { background: #c53030; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 10px 12px; background: #f7fafc; color: #4a5568; font-size: 13px; border-bottom: 2px solid #e2e8f0; }
+    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #4a5568; }
+    tr:hover { background: #f7fafc; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge.todo { background: #ebf8ff; color: #3182ce; }
+    .badge.in-progress { background: #fffbeb; color: #d97706; }
+    .badge.done { background: #f0fff4; color: #38a169; }
+    .badge.high { background: #fff5f5; color: #e53e3e; }
+    .badge.medium { background: #fffbeb; color: #d97706; }
+    .badge.low { background: #f0fff4; color: #38a169; }
+    .badge.admin { background: #faf5ff; color: #7c3aed; }
+    .badge.member { background: #ebf8ff; color: #3182ce; }
+    .hidden { display: none; }
+    .empty { text-align: center; color: #a0aec0; padding: 40px; }
+    select.status-select { padding: 4px 8px; font-size: 13px; border-radius: 6px; width: auto; }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>🗂️ TaskManager</h1>
+    <div>
+      <span id="welcomeText"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card"><div class="number" id="statTotal">0</div><div class="label">Total Tasks</div></div>
+      <div class="stat-card"><div class="number" id="statTodo">0</div><div class="label">To Do</div></div>
+      <div class="stat-card"><div class="number" id="statProgress">0</div><div class="label">In Progress</div></div>
+      <div class="stat-card"><div class="number" id="statDone">0</div><div class="label">Completed</div></div>
+      <div class="stat-card overdue"><div class="number" id="statOverdue">0</div><div class="label">Overdue</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="showTab('tasks')">📋 Tasks</button>
+      <button class="tab-btn" onclick="showTab('projects')">📁 Projects</button>
+      <button class="tab-btn admin-only hidden" onclick="showTab('users')">👥 Users</button>
+    </div>
+
+    <!-- Tasks Section -->
+    <div id="tasksSection" class="section">
+      <h2>Tasks</h2>
+      <div id="createTaskForm" class="hidden">
+        <div class="form-row">
+          <input type="text" id="taskTitle" placeholder="Task title *" />
+          <input type="text" id="taskDesc" placeholder="Description" />
+        </div>
+        <div class="form-row">
+          <select id="taskPriority">
+            <option value="low">Low Priority</option>
+            <option value="medium" selected>Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+          <input type="date" id="taskDueDate" />
+          <select id="taskProject"><option value="">Select Project</option></select>
+          <select id="taskAssignee"><option value="">Assign To</option></select>
+        </div>
+        <button class="btn btn-primary" onclick="createTask()">Create Task</button>
+      </div>
+      <br/>
+      <table>
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Project</th>
+            <th>Assigned To</th>
+            <th>Priority</th>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="tasksTable"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Projects Section -->
+    <div id="projectsSection" class="section hidden">
+      <h2>Projects</h2>
+      <div id="createProjectForm" class="hidden">
+        <div class="form-row">
+          <input type="text" id="projectName" placeholder="Project name *" />
+          <input type="text" id="projectDesc" placeholder="Description" />
+        </div>
+        <button class="btn btn-primary" onclick="createProject()">Create Project</button>
+      </div>
+      <br/>
+      <table>
+        <thead>
+          <tr><th>Project Name</th><th>Description</th><th>Created</th></tr>
+        </thead>
+        <tbody id="projectsTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+      </table>
+    </div>
+
+    <!-- Users Section (Admin only) -->
+    <div id="usersSection" class="section hidden">
+      <h2>All Users</h2>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Email</th><th>Role</th></tr>
+        </thead>
+        <tbody id="usersTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
