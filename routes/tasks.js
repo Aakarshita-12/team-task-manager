@@ -5,24 +5,28 @@ const auth = require('../middleware/auth');
 
 // Get all tasks
 router.get('/', auth, (req, res) => {
-  let tasks;
   if (req.user.role === 'admin') {
-    tasks = db.prepare(`
+    db.all(`
       SELECT tasks.*, users.name as assigned_name, projects.name as project_name
       FROM tasks
       LEFT JOIN users ON tasks.assigned_to = users.id
       LEFT JOIN projects ON tasks.project_id = projects.id
-    `).all();
+    `, [], (err, tasks) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(tasks);
+    });
   } else {
-    tasks = db.prepare(`
+    db.all(`
       SELECT tasks.*, users.name as assigned_name, projects.name as project_name
       FROM tasks
       LEFT JOIN users ON tasks.assigned_to = users.id
       LEFT JOIN projects ON tasks.project_id = projects.id
       WHERE tasks.assigned_to = ?
-    `).all(req.user.id);
+    `, [req.user.id], (err, tasks) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(tasks);
+    });
   }
-  res.json(tasks);
 });
 
 // Create task (admin only)
@@ -37,12 +41,15 @@ router.post('/', auth, (req, res) => {
     return res.status(400).json({ message: 'Title and project are required' });
   }
 
-  const stmt = db.prepare(`
+  db.run(`
     INSERT INTO tasks (title, description, priority, due_date, project_id, assigned_to, created_by)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `);
-  const result = stmt.run(title, description, priority, due_date, project_id, assigned_to, req.user.id);
-  res.json({ message: 'Task created', id: result.lastInsertRowid });
+  `, [title, description, priority, due_date, project_id, assigned_to, req.user.id],
+    function (err) {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json({ message: 'Task created', id: this.lastID });
+    }
+  );
 });
 
 // Update task status
@@ -54,18 +61,18 @@ router.put('/:id/status', auth, (req, res) => {
     return res.status(400).json({ message: 'Invalid status' });
   }
 
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+  db.get('SELECT * FROM tasks WHERE id = ?', [req.params.id], (err, task) => {
+    if (err || !task) return res.status(404).json({ message: 'Task not found' });
 
-  if (!task) {
-    return res.status(404).json({ message: 'Task not found' });
-  }
+    if (req.user.role !== 'admin' && task.assigned_to !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
 
-  if (req.user.role !== 'admin' && task.assigned_to !== req.user.id) {
-    return res.status(403).json({ message: 'Not authorized' });
-  }
-
-  db.prepare('UPDATE tasks SET status = ? WHERE id = ?').run(status, req.params.id);
-  res.json({ message: 'Status updated' });
+    db.run('UPDATE tasks SET status = ? WHERE id = ?', [status, req.params.id], (err) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json({ message: 'Status updated' });
+    });
+  });
 });
 
 // Delete task (admin only)
@@ -74,31 +81,41 @@ router.delete('/:id', auth, (req, res) => {
     return res.status(403).json({ message: 'Only admins can delete tasks' });
   }
 
-  db.prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
-  res.json({ message: 'Task deleted' });
+  db.run('DELETE FROM tasks WHERE id = ?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json({ message: 'Task deleted' });
+  });
 });
 
 // Get dashboard stats
 router.get('/stats', auth, (req, res) => {
-  let stats;
   if (req.user.role === 'admin') {
-    stats = {
-      total: db.prepare('SELECT COUNT(*) as count FROM tasks').get().count,
-      todo: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'todo'").get().count,
-      inProgress: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'in-progress'").get().count,
-      done: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'done'").get().count,
-      overdue: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE due_date < date('now') AND status != 'done'").get().count,
-    };
+    db.all(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) as todo,
+        SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as inProgress,
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
+        SUM(CASE WHEN due_date < date('now') AND status != 'done' THEN 1 ELSE 0 END) as overdue
+      FROM tasks
+    `, [], (err, rows) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(rows[0]);
+    });
   } else {
-    stats = {
-      total: db.prepare('SELECT COUNT(*) as count FROM tasks WHERE assigned_to = ?').get(req.user.id).count,
-      todo: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'todo' AND assigned_to = ?").get(req.user.id).count,
-      inProgress: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'in-progress' AND assigned_to = ?").get(req.user.id).count,
-      done: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE status = 'done' AND assigned_to = ?").get(req.user.id).count,
-      overdue: db.prepare("SELECT COUNT(*) as count FROM tasks WHERE due_date < date('now') AND status != 'done' AND assigned_to = ?").get(req.user.id).count,
-    };
+    db.all(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) as todo,
+        SUM(CASE WHEN status = 'in-progress' THEN 1 ELSE 0 END) as inProgress,
+        SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
+        SUM(CASE WHEN due_date < date('now') AND status != 'done' THEN 1 ELSE 0 END) as overdue
+      FROM tasks WHERE assigned_to = ?
+    `, [req.user.id], (err, rows) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(rows[0]);
+    });
   }
-  res.json(stats);
 });
 
 module.exports = router;

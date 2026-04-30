@@ -16,15 +16,16 @@ router.post('/signup', (req, res) => {
   const hashedPassword = bcrypt.hashSync(password, 10);
   const userRole = role === 'admin' ? 'admin' : 'member';
 
-  try {
-    const stmt = db.prepare(
-      'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)'
-    );
-    stmt.run(name, email, hashedPassword, userRole);
-    res.json({ message: 'User created successfully' });
-  } catch (err) {
-    res.status(400).json({ message: 'Email already exists' });
-  }
+  db.run(
+    'INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)',
+    [name, email, hashedPassword, userRole],
+    function (err) {
+      if (err) {
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+      res.json({ message: 'User created successfully' });
+    }
+  );
 });
 
 // Login
@@ -35,24 +36,24 @@ router.post('/login', (req, res) => {
     return res.status(400).json({ message: 'All fields are required' });
   }
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+    if (err || !user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
 
-  if (!user) {
-    return res.status(400).json({ message: 'User not found' });
-  }
+    const isMatch = bcrypt.compareSync(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid password' });
+    }
 
-  const isMatch = bcrypt.compareSync(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ message: 'Invalid password' });
-  }
+    const token = jwt.sign(
+      { id: user.id, role: user.role, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-  const token = jwt.sign(
-    { id: user.id, role: user.role, name: user.name },
-    process.env.JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-
-  res.json({ token, role: user.role, name: user.name });
+    res.json({ token, role: user.role, name: user.name });
+  });
 });
 
 module.exports = router;

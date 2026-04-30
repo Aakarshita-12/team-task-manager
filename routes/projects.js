@@ -5,17 +5,21 @@ const auth = require('../middleware/auth');
 
 // Get all projects
 router.get('/', auth, (req, res) => {
-  let projects;
   if (req.user.role === 'admin') {
-    projects = db.prepare('SELECT * FROM projects').all();
+    db.all('SELECT * FROM projects', [], (err, projects) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(projects);
+    });
   } else {
-    projects = db.prepare(`
+    db.all(`
       SELECT projects.* FROM projects
       JOIN project_members ON projects.id = project_members.project_id
       WHERE project_members.user_id = ?
-    `).all(req.user.id);
+    `, [req.user.id], (err, projects) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json(projects);
+    });
   }
-  res.json(projects);
 });
 
 // Create project (admin only)
@@ -29,11 +33,14 @@ router.post('/', auth, (req, res) => {
     return res.status(400).json({ message: 'Project name is required' });
   }
 
-  const stmt = db.prepare(
-    'INSERT INTO projects (name, description, created_by) VALUES (?, ?, ?)'
+  db.run(
+    'INSERT INTO projects (name, description, created_by) VALUES (?, ?, ?)',
+    [name, description, req.user.id],
+    function (err) {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json({ message: 'Project created', id: this.lastID });
+    }
   );
-  const result = stmt.run(name, description, req.user.id);
-  res.json({ message: 'Project created', id: result.lastInsertRowid });
 });
 
 // Add member to project (admin only)
@@ -43,11 +50,14 @@ router.post('/:id/members', auth, (req, res) => {
   }
 
   const { user_id } = req.body;
-  const stmt = db.prepare(
-    'INSERT INTO project_members (project_id, user_id) VALUES (?, ?)'
+  db.run(
+    'INSERT INTO project_members (project_id, user_id) VALUES (?, ?)',
+    [req.params.id, user_id],
+    function (err) {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json({ message: 'Member added' });
+    }
   );
-  stmt.run(req.params.id, user_id);
-  res.json({ message: 'Member added' });
 });
 
 // Get all users (admin only)
@@ -55,8 +65,10 @@ router.get('/users', auth, (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Only admins can view users' });
   }
-  const users = db.prepare('SELECT id, name, email, role FROM users').all();
-  res.json(users);
+  db.all('SELECT id, name, email, role FROM users', [], (err, users) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json(users);
+  });
 });
 
 module.exports = router;
