@@ -4,26 +4,24 @@ const db = require('../database');
 const auth = require('../middleware/auth');
 
 // Get all projects
-router.get('/', auth, async (req, res) => {
-  try {
-    let projects;
-    if (req.user.role === 'admin') {
-      projects = await db.query(`SELECT * FROM projects`);
-    } else {
-      projects = await db.query(`
-        SELECT projects.* FROM projects
-        JOIN project_members ON projects.id = project_members.project_id
-        WHERE project_members.user_id = ${req.user.id}
-      `);
-    }
-    res.json(projects);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+router.get('/', auth, (req, res) => {
+  let projects;
+  if (req.user.role === 'admin') {
+    projects = db.get('projects').value();
+  } else {
+    const memberOf = db.get('project_members')
+      .filter({ user_id: req.user.id })
+      .map('project_id')
+      .value();
+    projects = db.get('projects')
+      .filter(p => memberOf.includes(p.id))
+      .value();
   }
+  res.json(projects);
 });
 
 // Create project (admin only)
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Only admins can create projects' });
   }
@@ -33,46 +31,46 @@ router.post('/', auth, async (req, res) => {
     return res.status(400).json({ message: 'Project name is required' });
   }
 
-  try {
-    await db.query(`
-      INSERT INTO projects (name, description, created_by) 
-      VALUES (${name}, ${description}, ${req.user.id})
-    `);
-    res.json({ message: 'Project created' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  const project = {
+    id: Date.now(),
+    name,
+    description,
+    created_by: req.user.id,
+    created_at: new Date().toISOString()
+  };
+
+  db.get('projects').push(project).write();
+  res.json({ message: 'Project created', id: project.id });
 });
 
 // Add member to project (admin only)
-router.post('/:id/members', auth, async (req, res) => {
+router.post('/:id/members', auth, (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Only admins can add members' });
   }
 
   const { user_id } = req.body;
-  try {
-    await db.query(`
-      INSERT INTO project_members (project_id, user_id) 
-      VALUES (${req.params.id}, ${user_id})
-    `);
-    res.json({ message: 'Member added' });
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  db.get('project_members').push({
+    id: Date.now(),
+    project_id: parseInt(req.params.id),
+    user_id
+  }).write();
+
+  res.json({ message: 'Member added' });
 });
 
 // Get all users (admin only)
-router.get('/users', auth, async (req, res) => {
+router.get('/users', auth, (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Only admins can view users' });
   }
-  try {
-    const users = await db.query(`SELECT id, name, email, role FROM users`);
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: 'Server error' });
-  }
+  const users = db.get('users').map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role
+  })).value();
+  res.json(users);
 });
 
 module.exports = router;
