@@ -4,45 +4,143 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Team Task Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 420px; }
-    h1 { text-align: center; color: #2d3748; margin-bottom: 8px; font-size: 24px; }
-    .subtitle { text-align: center; color: #718096; margin-bottom: 30px; font-size: 14px; }
-    .tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
-    .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; color: #718096; font-weight: 500; }
-    .tab.active { color: #4f46e5; border-bottom: 2px solid #4f46e5; margin-bottom: -2px; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0f0e17;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: #1a1828;
+      border-radius: 20px;
+      border: 0.5px solid rgba(255,255,255,0.08);
+      padding: 40px 36px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: #f5f4ff;
+      font-weight: 400;
+    }
+    .subtitle { font-size: 13px; color: rgba(255,255,255,0.38); margin-bottom: 28px; }
+    .tabs {
+      display: flex;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 26px;
+    }
+    .tab {
+      flex: 1; padding: 9px;
+      text-align: center; cursor: pointer;
+      font-size: 14px; font-weight: 500;
+      color: rgba(255,255,255,0.38);
+      border-radius: 7px;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .tab.active { background: #6366f1; color: #fff; }
     .form-group { margin-bottom: 16px; }
-    label { display: block; margin-bottom: 6px; color: #4a5568; font-size: 14px; font-weight: 500; }
-    input, select { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
-    input:focus, select:focus { border-color: #4f46e5; }
-    button { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
-    button:hover { background: #4338ca; }
-    .message { padding: 10px; border-radius: 8px; margin-top: 16px; text-align: center; font-size: 14px; display: none; }
-    .message.error { background: #fff5f5; color: #e53e3e; }
-    .message.success { background: #f0fff4; color: #38a169; }
+    label {
+      display: block;
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 7px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+    input, select {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      font-size: 14px;
+      color: #f5f4ff;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input::placeholder { color: rgba(255,255,255,0.22); }
+    input:focus, select:focus {
+      border-color: #6366f1;
+      background: rgba(99,102,241,0.08);
+    }
+    select option { background: #1a1828; }
+    button {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white; border: none;
+      border-radius: 10px;
+      font-size: 15px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    button:hover { opacity: 0.92; }
+    button:active { transform: scale(0.99); }
+    .message {
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin-top: 14px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+    .message.error { background: rgba(239,68,68,0.12); color: #f87171; border: 0.5px solid rgba(239,68,68,0.2); }
+    .message.success { background: rgba(52,211,153,0.1); color: #34d399; border: 0.5px solid rgba(52,211,153,0.2); }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🗂️ TaskManager</h1>
+  <div class="card">
+    <div class="logo">
+      <div class="logo-icon">🗂️</div>
+      <h1>TaskManager</h1>
+    </div>
     <p class="subtitle">Manage your team & projects</p>
 
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('login')">Login</div>
-      <div class="tab" onclick="switchTab('signup')">Sign Up</div>
+      <div class="tab active" onclick="switchTab('login', this)">Login</div>
+      <div class="tab" onclick="switchTab('signup', this)">Sign Up</div>
     </div>
 
     <!-- Login Form -->
     <div id="loginForm">
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="Enter your email" />
+        <input type="email" id="loginEmail" placeholder="you@example.com" />
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="Enter your password" />
+        <input type="password" id="loginPassword" placeholder="••••••••" />
       </div>
       <button onclick="login()">Login</button>
     </div>
@@ -51,11 +149,11 @@
     <div id="signupForm" style="display:none">
       <div class="form-group">
         <label>Full Name</label>
-        <input type="text" id="signupName" placeholder="Enter your name" />
+        <input type="text" id="signupName" placeholder="Your name" />
       </div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="signupEmail" placeholder="Enter your email" />
+        <input type="email" id="signupEmail" placeholder="you@example.com" />
       </div>
       <div class="form-group">
         <label>Password</label>
@@ -75,9 +173,9 @@
   </div>
 
   <script>
-    function switchTab(tab) {
+    function switchTab(tab, el) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      event.target.classList.add('active');
+      el.classList.add('active');
       document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
       document.getElementById('signupForm').style.display = tab === 'signup' ? 'block' : 'none';
       document.getElementById('message').style.display = 'none';
@@ -126,7 +224,7 @@
       const data = await res.json();
       if (res.ok) {
         showMessage('Account created! Please login.', 'success');
-        switchTab('login');
+        switchTab('login', document.querySelector('.tab'));
       } else {
         showMessage(data.message, 'error');
       }
