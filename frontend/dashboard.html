@@ -4,63 +4,249 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard - TaskManager</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; }
-    .navbar { background: #4f46e5; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
-    .navbar h1 { font-size: 20px; }
-    .navbar div { display: flex; align-items: center; gap: 16px; }
-    .navbar span { font-size: 14px; opacity: 0.9; }
-    .logout-btn { background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .logout-btn:hover { background: rgba(255,255,255,0.3); }
-    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); text-align: center; }
-    .stat-card .number { font-size: 36px; font-weight: 700; color: #4f46e5; }
-    .stat-card .label { color: #718096; font-size: 13px; margin-top: 4px; }
-    .stat-card.overdue .number { color: #e53e3e; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .tab-btn { padding: 8px 20px; border: none; border-radius: 20px; cursor: pointer; font-size: 14px; background: white; color: #4a5568; box-shadow: 0 2px 6px rgba(0,0,0,0.07); }
-    .tab-btn.active { background: #4f46e5; color: white; }
-    .section { background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 24px; margin-bottom: 24px; }
-    .section h2 { font-size: 18px; color: #2d3748; margin-bottom: 16px; }
-    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
-    input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; }
-    input:focus, select:focus { border-color: #4f46e5; }
-    .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
-    .btn-primary { background: #4f46e5; color: white; }
-    .btn-primary:hover { background: #4338ca; }
-    .btn-danger { background: #e53e3e; color: white; }
-    .btn-danger:hover { background: #c53030; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0f0e17;
+      color: #e2e0f0;
+      min-height: 100vh;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      background: #1a1828;
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .navbar-icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .navbar h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 20px;
+      color: #f5f4ff;
+      font-weight: 400;
+    }
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    #welcomeText {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.07);
+      border: 0.5px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.7);
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.12); }
+
+    /* CONTAINER */
+    .container { max-width: 1100px; margin: 28px auto; padding: 0 20px; }
+
+    /* STATS */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: #1a1828;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 20px;
+      text-align: center;
+    }
+    .stat-card .number {
+      font-size: 34px;
+      font-weight: 600;
+      color: #818cf8;
+      line-height: 1;
+    }
+    .stat-card .label {
+      color: rgba(255,255,255,0.38);
+      font-size: 12px;
+      margin-top: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .stat-card.overdue .number { color: #f87171; }
+
+    /* TABS */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.45);
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #6366f1;
+    }
+    .tab-btn:hover:not(.active) {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* SECTION */
+    .section {
+      background: #1a1828;
+      border: 0.5px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .section h2 {
+      font-size: 16px;
+      font-weight: 500;
+      color: #f5f4ff;
+      margin-bottom: 18px;
+    }
+
+    /* FORM */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 9px;
+      font-size: 14px;
+      color: #f5f4ff;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input::placeholder { color: rgba(255,255,255,0.22); }
+    input:focus, select:focus { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+    select option { background: #1a1828; }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-danger { background: rgba(239,68,68,0.15); color: #f87171; border: 0.5px solid rgba(239,68,68,0.25); }
+    .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
-    th { text-align: left; padding: 10px 12px; background: #f7fafc; color: #4a5568; font-size: 13px; border-bottom: 2px solid #e2e8f0; }
-    td { padding: 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #4a5568; }
-    tr:hover { background: #f7fafc; }
-    .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    .badge.todo { background: #ebf8ff; color: #3182ce; }
-    .badge.in-progress { background: #fffbeb; color: #d97706; }
-    .badge.done { background: #f0fff4; color: #38a169; }
-    .badge.high { background: #fff5f5; color: #e53e3e; }
-    .badge.medium { background: #fffbeb; color: #d97706; }
-    .badge.low { background: #f0fff4; color: #38a169; }
-    .badge.admin { background: #faf5ff; color: #7c3aed; }
-    .badge.member { background: #ebf8ff; color: #3182ce; }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.04);
+      color: rgba(255,255,255,0.38);
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.07);
+    }
+    td {
+      padding: 13px 14px;
+      border-bottom: 0.5px solid rgba(255,255,255,0.05);
+      font-size: 14px;
+      color: rgba(255,255,255,0.75);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* BADGES */
+    .badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+    }
+    .badge.todo { background: rgba(59,130,246,0.15); color: #93c5fd; }
+    .badge.in-progress { background: rgba(245,158,11,0.15); color: #fcd34d; }
+    .badge.done { background: rgba(52,211,153,0.15); color: #6ee7b7; }
+    .badge.high { background: rgba(239,68,68,0.15); color: #fca5a5; }
+    .badge.medium { background: rgba(245,158,11,0.15); color: #fcd34d; }
+    .badge.low { background: rgba(52,211,153,0.15); color: #6ee7b7; }
+    .badge.admin { background: rgba(139,92,246,0.15); color: #c4b5fd; }
+    .badge.member { background: rgba(59,130,246,0.15); color: #93c5fd; }
+
     .hidden { display: none; }
-    .empty { text-align: center; color: #a0aec0; padding: 40px; }
-    select.status-select { padding: 4px 8px; font-size: 13px; border-radius: 6px; width: auto; }
+    .empty { text-align: center; color: rgba(255,255,255,0.2); padding: 40px; font-size: 14px; }
+
+    select.status-select {
+      padding: 4px 8px;
+      font-size: 13px;
+      border-radius: 6px;
+      width: auto;
+    }
   </style>
 </head>
 <body>
   <div class="navbar">
-    <h1>🗂️ TaskManager</h1>
-    <div>
+    <div class="navbar-brand">
+      <div class="navbar-icon">🗂️</div>
+      <h1>TaskManager</h1>
+    </div>
+    <div class="navbar-right">
       <span id="welcomeText"></span>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
 
   <div class="container">
-    <!-- Stats -->
+
     <div class="stats">
       <div class="stat-card"><div class="number" id="statTotal">0</div><div class="label">Total Tasks</div></div>
       <div class="stat-card"><div class="number" id="statTodo">0</div><div class="label">To Do</div></div>
@@ -69,7 +255,6 @@
       <div class="stat-card overdue"><div class="number" id="statOverdue">0</div><div class="label">Overdue</div></div>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
       <button class="tab-btn active" onclick="showTab('tasks')">📋 Tasks</button>
       <button class="tab-btn" onclick="showTab('projects')">📁 Projects</button>
@@ -97,20 +282,22 @@
         <button class="btn btn-primary" onclick="createTask()">Create Task</button>
       </div>
       <br/>
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Project</th>
-            <th>Assigned To</th>
-            <th>Priority</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="tasksTable"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Project</th>
+              <th>Assigned To</th>
+              <th>Priority</th>
+              <th>Due Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tasksTable"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Projects Section -->
@@ -124,24 +311,29 @@
         <button class="btn btn-primary" onclick="createProject()">Create Project</button>
       </div>
       <br/>
-      <table>
-        <thead>
-          <tr><th>Project Name</th><th>Description</th><th>Created</th></tr>
-        </thead>
-        <tbody id="projectsTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Project Name</th><th>Description</th><th>Created</th></tr>
+          </thead>
+          <tbody id="projectsTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Users Section (Admin only) -->
     <div id="usersSection" class="section hidden">
       <h2>All Users</h2>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>Email</th><th>Role</th></tr>
-        </thead>
-        <tbody id="usersTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Role</th></tr>
+          </thead>
+          <tbody id="usersTable"><tr><td colspan="3" class="empty">Loading...</td></tr></tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 
   <script src="app.js"></script>
