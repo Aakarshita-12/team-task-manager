@@ -1,15 +1,8 @@
-const low = require('lowdb');
-const FileSync = require('lowdb/adapters/FileSync');
+const { Pool } = require('pg');
 
-const adapter = new FileSync('db.json');
-const db = low(adapter);
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-// Set defaults
-db.defaults({
-  users: [],
-  projects: [],
-  project_members: [],
-  tasks: []
-}).write();
-
-module.exports = db;
+module.exports = pool;
